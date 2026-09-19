@@ -1,4 +1,27 @@
+# Dependencies
 node_modules/
-dist/
+
+# Environment variables
 .env
-.env.example
+.env.*
+
+# Logs
+*.log
+
+# Build
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AI agent generated files
+.agents/
+.claude/
+.cursor/
+.devin/

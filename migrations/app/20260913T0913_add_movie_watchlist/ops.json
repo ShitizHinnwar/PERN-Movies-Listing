@@ -1,0 +1,421 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.movie",
+    "label": "Create table \"movie\"",
+    "summary": "Creates table \"movie\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "movie"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"movie\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"movie\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"movie\"",
+        "sql": "CREATE TABLE \"public\".\"movie\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"createdBy\" text NOT NULL,\n  \"genres\" text[] DEFAULT '{}' NOT NULL,\n  \"id\" text NOT NULL,\n  \"overview\" text,\n  \"posterUrl\" text,\n  \"releaseDate\" text,\n  \"runtime\" int4,\n  \"title\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"movie_genres_elem_not_null_6dc02271\" CHECK (array_position(\"genres\", NULL) IS NULL)\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"movie\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"movie\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.user",
+    "label": "Create table \"user\"",
+    "summary": "Creates table \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"user\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"user\"",
+        "sql": "CREATE TABLE \"public\".\"user\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"name\" text,\n  \"password\" text NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"username\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"user\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.watchlistItem",
+    "label": "Create table \"watchlistItem\"",
+    "summary": "Creates table \"watchlistItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "watchlistItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"watchlistItem\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"watchlistItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"watchlistItem\"",
+        "sql": "CREATE TABLE \"public\".\"watchlistItem\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"movieId\" text NOT NULL,\n  \"notes\" text,\n  \"rating\" int4,\n  \"status\" text DEFAULT 'PLANNED' NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"userId\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"watchlistItem_status_check_96b071fd\" CHECK (\"status\" IN ('PLANNED', 'WATCHING', 'COMPLETED', 'DROPPED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"watchlistItem\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"watchlistItem\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.user.user_email_key",
+    "label": "Add unique constraint on \"user\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "user_email_key",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"user_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_email_key",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"user_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ADD CONSTRAINT \"user_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"user_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_email_key",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.movie.movie_createdBy_idx_ba0f792f",
+    "label": "Create index \"movie_createdBy_idx_ba0f792f\" on \"movie\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "movie_createdBy_idx_ba0f792f",
+        "table": "movie"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"movie_createdBy_idx_ba0f792f\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"movie_createdBy_idx_ba0f792f\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"movie_createdBy_idx_ba0f792f\"",
+        "sql": "CREATE INDEX \"movie_createdBy_idx_ba0f792f\" ON \"public\".\"movie\" (\"createdBy\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"movie_createdBy_idx_ba0f792f\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"movie_createdBy_idx_ba0f792f\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.watchlistItem.watchlistItem_movieId_idx_8cb9f9db",
+    "label": "Create index \"watchlistItem_movieId_idx_8cb9f9db\" on \"watchlistItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "watchlistItem_movieId_idx_8cb9f9db",
+        "table": "watchlistItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"watchlistItem_movieId_idx_8cb9f9db\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"watchlistItem_movieId_idx_8cb9f9db\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"watchlistItem_movieId_idx_8cb9f9db\"",
+        "sql": "CREATE INDEX \"watchlistItem_movieId_idx_8cb9f9db\" ON \"public\".\"watchlistItem\" (\"movieId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"watchlistItem_movieId_idx_8cb9f9db\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"watchlistItem_movieId_idx_8cb9f9db\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.watchlistItem.watchlistItem_userId_idx_a489d58a",
+    "label": "Create index \"watchlistItem_userId_idx_a489d58a\" on \"watchlistItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "watchlistItem_userId_idx_a489d58a",
+        "table": "watchlistItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"watchlistItem_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"watchlistItem_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"watchlistItem_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"watchlistItem_userId_idx_a489d58a\" ON \"public\".\"watchlistItem\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"watchlistItem_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"watchlistItem_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.movie.movie_createdBy_fkey",
+    "label": "Add foreign key \"movie_createdBy_fkey\" on \"movie\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "movie_createdBy_fkey",
+        "table": "movie"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"movie_createdBy_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "movie_createdBy_fkey",
+          "public",
+          "\"public\".\"movie\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"movie_createdBy_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"movie\"\nADD CONSTRAINT \"movie_createdBy_fkey\"\nFOREIGN KEY (\"createdBy\")\nREFERENCES \"public\".\"user\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"movie_createdBy_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "movie_createdBy_fkey",
+          "public",
+          "\"public\".\"movie\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.watchlistItem.watchlistItem_userId_fkey",
+    "label": "Add foreign key \"watchlistItem_userId_fkey\" on \"watchlistItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "watchlistItem_userId_fkey",
+        "table": "watchlistItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"watchlistItem_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "watchlistItem_userId_fkey",
+          "public",
+          "\"public\".\"watchlistItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"watchlistItem_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"watchlistItem\"\nADD CONSTRAINT \"watchlistItem_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"watchlistItem_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "watchlistItem_userId_fkey",
+          "public",
+          "\"public\".\"watchlistItem\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.watchlistItem.watchlistItem_movieId_fkey",
+    "label": "Add foreign key \"watchlistItem_movieId_fkey\" on \"watchlistItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "watchlistItem_movieId_fkey",
+        "table": "watchlistItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"watchlistItem_movieId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "watchlistItem_movieId_fkey",
+          "public",
+          "\"public\".\"watchlistItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"watchlistItem_movieId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"watchlistItem\"\nADD CONSTRAINT \"watchlistItem_movieId_fkey\"\nFOREIGN KEY (\"movieId\")\nREFERENCES \"public\".\"movie\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"watchlistItem_movieId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "watchlistItem_movieId_fkey",
+          "public",
+          "\"public\".\"watchlistItem\""
+        ]
+      }
+    ]
+  }
+]
